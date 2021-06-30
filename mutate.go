@@ -64,12 +64,33 @@ func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.Admi
 			Effect:   v1.TaintEffectNoSchedule,
 		})
 
-		tolerations = append(tolerations, v1.Toleration{
-			Key:      "node.statcan.gc.ca/use",
-			Value:    "general",
-			Operator: v1.TolerationOpEqual,
-			Effect:   v1.TaintEffectNoSchedule,
-		})
+		// Check for a GPU
+		hasGPU := false
+		for _, container := range pod.Spec.Containers {
+			// if container.Resources.Requests.
+			if limit, ok := container.Resources.Requests["nvidia.com/gpu"]; ok {
+				if !limit.IsZero() {
+					hasGPU = true
+					break
+				}
+			}
+		}
+
+		if hasGPU {
+			tolerations = append(tolerations, v1.Toleration{
+				Key:      "node.statcan.gc.ca/use",
+				Value:    "gpu",
+				Operator: v1.TolerationOpEqual,
+				Effect:   v1.TaintEffectNoSchedule,
+			})
+		} else {
+			tolerations = append(tolerations, v1.Toleration{
+				Key:      "node.statcan.gc.ca/use",
+				Value:    "general",
+				Operator: v1.TolerationOpEqual,
+				Effect:   v1.TaintEffectNoSchedule,
+			})
+		}
 
 		// System pools are always protected-b
 		if purpose == "system" {
