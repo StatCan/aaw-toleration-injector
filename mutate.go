@@ -65,21 +65,28 @@ func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.Admi
 		})
 
 		// Check for a GPU
-		hasGPU := false
+		numGPU := 0
 		for _, container := range pod.Spec.Containers {
 			// if container.Resources.Requests.
 			if limit, ok := container.Resources.Requests["nvidia.com/gpu"]; ok {
 				if !limit.IsZero() {
-					hasGPU = true
+					numGPU = int(limit.Value())
 					break
 				}
 			}
 		}
 
-		if hasGPU {
+		if numGPU == 1 {
 			tolerations = append(tolerations, v1.Toleration{
 				Key:      "node.statcan.gc.ca/use",
 				Value:    "gpu",
+				Operator: v1.TolerationOpEqual,
+				Effect:   v1.TaintEffectNoSchedule,
+			})
+		} else if numGPU == 4 {
+			tolerations = append(tolerations, v1.Toleration{
+				Key:      "node.statcan.gc.ca/use",
+				Value:    "gpu-4",
 				Operator: v1.TolerationOpEqual,
 				Effect:   v1.TaintEffectNoSchedule,
 			})
