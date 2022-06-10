@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"k8s.io/api/admission/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -90,16 +91,16 @@ func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.Admi
 				Operator: v1.TolerationOpEqual,
 				Effect:   v1.TaintEffectNoSchedule,
 			})
-		} else if request.Namespace == "cloud-main-system" {
+			// put condition here to only add this toleration for oncosim
+			// TODO: you may want another mechanism to identify oncosim which pods get scheduled to the
+			// compute optimized node.
+		} else if request.Namespace == "oncosim" && strings.HasPrefix(pod.Name, "big-cpu") {
 			/*
-				If the pod namespace is "cloud-main-system", then it is an istio egress gateway pod that
-				should be scheduled to the `cloud-main-system` node pool. This node pool specifically has
-				the taint `node.statcan.gc.ca/use=cloud-main-system`, so this block is adding the corresponding
-				toleration.
+				Allow oncosim pods to be scheduled to cpu-optimized nodes.
 			*/
 			tolerations = append(tolerations, v1.Toleration{
 				Key:      "node.statcan.gc.ca/use",
-				Value:    "cloud-main-system",
+				Value:    "cpu-72",
 				Operator: v1.TolerationOpEqual,
 				Effect:   v1.TaintEffectNoSchedule,
 			})
