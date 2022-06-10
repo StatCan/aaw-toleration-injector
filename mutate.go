@@ -90,6 +90,19 @@ func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.Admi
 				Operator: v1.TolerationOpEqual,
 				Effect:   v1.TaintEffectNoSchedule,
 			})
+		} else if request.Namespace == "cloud-main-system" {
+			/*
+				If the pod namespace is "cloud-main-system", then it is an istio egress gateway pod that
+				should be scheduled to the `cloud-main-system` node pool. This node pool specifically has
+				the taint `node.statcan.gc.ca/use=cloud-main-system`, so this block is adding the corresponding
+				toleration.
+			*/
+			tolerations = append(tolerations, v1.Toleration{
+				Key:      "node.statcan.gc.ca/use",
+				Value:    "cloud-main-system",
+				Operator: v1.TolerationOpEqual,
+				Effect:   v1.TaintEffectNoSchedule,
+			})
 		} else {
 			tolerations = append(tolerations, v1.Toleration{
 				Key:      "node.statcan.gc.ca/use",
