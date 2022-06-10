@@ -90,6 +90,19 @@ func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.Admi
 				Operator: v1.TolerationOpEqual,
 				Effect:   v1.TaintEffectNoSchedule,
 			})
+			// put condition here to only add this toleration for oncosim
+			// TODO: you may want another mechanism to identify oncosim which pods get scheduled to the
+			// compute optimized node.
+		} else if request.Namespace == "oncosim" {
+			/*
+				Allow oncosim pods to be scheduled to cpu-optimized nodes.
+			*/
+			tolerations = append(tolerations, v1.Toleration{
+				Key:      "node.statcan.gc.ca/use",
+				Value:    "cpu-72",
+				Operator: v1.TolerationOpEqual,
+				Effect:   v1.TaintEffectNoSchedule,
+			})
 		} else {
 			tolerations = append(tolerations, v1.Toleration{
 				Key:      "node.statcan.gc.ca/use",
