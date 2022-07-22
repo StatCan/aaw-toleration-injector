@@ -35,8 +35,8 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 }
 
 // read bigcpu-ns-conf.yaml and use in mutate.go to tolerate pods allowed for f72 node pool
-func UnmarshalConf() []string {
-	yfile, err := ioutil.ReadFile("bigcpu-ns-conf.yaml")
+func UnmarshalConf() map[string][]string {
+	yfile, err := ioutil.ReadFile("ns-conf.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,11 +49,11 @@ func UnmarshalConf() []string {
 	}
 
 	// list big cpu namespaces in namespace slice
-	for k, v := range conf["namespaces"] {
+	for k, v := range conf["bigCPUns"] {
 		fmt.Printf("%d -> %s\n", k, v)
 	}
 
-	return conf["namespaces"]
+	return conf
 }
 
 func handleMutate(namespacesLister corev1listers.NamespaceLister) func(w http.ResponseWriter, r *http.Request) {

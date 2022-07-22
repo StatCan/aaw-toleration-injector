@@ -12,7 +12,7 @@ import (
 	"k8s.io/klog"
 )
 
-func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.AdmissionRequest, bigCpuNamespaces []string) (v1beta1.AdmissionResponse, error) {
+func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.AdmissionRequest, namespaceConfig map[string][]string) (v1beta1.AdmissionResponse, error) {
 	response := v1beta1.AdmissionResponse{}
 
 	// Default response
@@ -104,6 +104,7 @@ func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.Admi
 				})
 			}
 		} else if numCPU == 72 {
+			bigCpuNamespaces := namespaceConfig["bigCPUns"]
 			for _, ns := range bigCpuNamespaces { // store namespaces in map[ns string] string for indexablility if needed
 				if pod.Namespace == ns {
 					tolerations = append(tolerations, v1.Toleration{
