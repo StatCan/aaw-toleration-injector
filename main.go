@@ -49,11 +49,11 @@ func UnmarshalConf() []string {
 	}
 
 	// list big cpu namespaces in namespace slice
-	for k, v := range conf["namespace"] {
+	for k, v := range conf["namespaces"] {
 		fmt.Printf("%d -> %s\n", k, v)
 	}
 
-	return conf["namespace"]
+	return conf["namespaces"]
 }
 
 func handleMutate(namespacesLister corev1listers.NamespaceLister) func(w http.ResponseWriter, r *http.Request) {
