@@ -12,7 +12,7 @@ import (
 	"k8s.io/klog"
 )
 
-func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.AdmissionRequest) (v1beta1.AdmissionResponse, error) {
+func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.AdmissionRequest, namespaceConfig map[string][]string) (v1beta1.AdmissionResponse, error) {
 	response := v1beta1.AdmissionResponse{}
 
 	// Default response
@@ -76,33 +76,45 @@ func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.Admi
 			}
 		}
 
-		if numGPU == 1 {
-			tolerations = append(tolerations, v1.Toleration{
-				Key:      "node.statcan.gc.ca/use",
-				Value:    "gpu",
-				Operator: v1.TolerationOpEqual,
-				Effect:   v1.TaintEffectNoSchedule,
-			})
-		} else if numGPU == 4 {
-			tolerations = append(tolerations, v1.Toleration{
-				Key:      "node.statcan.gc.ca/use",
-				Value:    "gpu-4",
-				Operator: v1.TolerationOpEqual,
-				Effect:   v1.TaintEffectNoSchedule,
-			})
-		} else if request.Namespace == "cloud-main-system" {
-			/*
-				If the pod namespace is "cloud-main-system", then it is an istio egress gateway pod that
-				should be scheduled to the `cloud-main-system` node pool. This node pool specifically has
-				the taint `node.statcan.gc.ca/use=cloud-main-system`, so this block is adding the corresponding
-				toleration.
-			*/
-			tolerations = append(tolerations, v1.Toleration{
-				Key:      "node.statcan.gc.ca/use",
-				Value:    "cloud-main-system",
-				Operator: v1.TolerationOpEqual,
-				Effect:   v1.TaintEffectNoSchedule,
-			})
+		// Check for CPU request values -> pods can have many containers requesting different CPU resources, need to select max(requests)
+		numCPU := 0
+		for _, container := range pod.Spec.Containers {
+			if req, ok := container.Resources.Requests["cpu"]; ok {
+				if numCPU < int(req.Value()) {
+					numCPU = int(req.Value())
+				}
+			}
+		}
+
+		// conditional eval
+		if numGPU != 0 {
+			if numGPU == 1 {
+				tolerations = append(tolerations, v1.Toleration{
+					Key:      "node.statcan.gc.ca/use",
+					Value:    "gpu",
+					Operator: v1.TolerationOpEqual,
+					Effect:   v1.TaintEffectNoSchedule,
+				})
+			} else if numGPU == 4 {
+				tolerations = append(tolerations, v1.Toleration{
+					Key:      "node.statcan.gc.ca/use",
+					Value:    "gpu-4",
+					Operator: v1.TolerationOpEqual,
+					Effect:   v1.TaintEffectNoSchedule,
+				})
+			}
+		} else if numCPU == 72 {
+			bigCpuNamespaces := namespaceConfig["bigCPUns"]
+			for _, ns := range bigCpuNamespaces { // store namespaces in map[ns string] string for indexablility if needed
+				if pod.Namespace == ns {
+					tolerations = append(tolerations, v1.Toleration{
+						Key:      "node.statcan.gc.ca/use",
+						Value:    "cpu-72",
+						Operator: v1.TolerationOpEqual,
+						Effect:   v1.TaintEffectNoSchedule,
+					})
+				}
+			}
 		} else {
 			tolerations = append(tolerations, v1.Toleration{
 				Key:      "node.statcan.gc.ca/use",
