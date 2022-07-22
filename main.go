@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/StatCan/daaas-aaw-toleration-injector/pkg/signals"
+	"gopkg.in/yaml.v3"
 	"k8s.io/api/admission/v1beta1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -33,6 +34,28 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "ok")
 }
 
+// read bigcpu-ns-conf.yaml and use in mutate.go to tolerate pods allowed for f72 node pool
+func UnmarshalConf() []string {
+	yfile, err := ioutil.ReadFile("bigcpu-ns-conf.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	conf := make(map[string][]string)
+
+	err2 := yaml.Unmarshal(yfile, &conf)
+	if err2 != nil {
+		log.Fatal(err2)
+	}
+
+	// list big cpu namespaces in namespace slice
+	for k, v := range conf["namespace"] {
+		fmt.Printf("%d -> %s\n", k, v)
+	}
+
+	return conf["namespace"]
+}
+
 func handleMutate(namespacesLister corev1listers.NamespaceLister) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Decode the request
@@ -53,7 +76,7 @@ func handleMutate(namespacesLister corev1listers.NamespaceLister) func(w http.Re
 			return
 		}
 
-		response, err := mutate(namespacesLister, *admissionReview.Request)
+		response, err := mutate(namespacesLister, *admissionReview.Request, UnmarshalConf())
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
