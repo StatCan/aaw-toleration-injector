@@ -34,24 +34,24 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "ok")
 }
 
-// read bigcpu-ns-conf.yaml and use in mutate.go to tolerate pods allowed for f72 node pool
+// read ns-conf.yaml and use in mutate.go to tolerate pods with special cases
 func UnmarshalConf() map[string][]string {
-	yfile, err := ioutil.ReadFile("ns-conf.yaml")
+	yfile, err := ioutil.ReadFile("app/ns-conf.yaml")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	conf := make(map[string][]string)
 
 	err2 := yaml.Unmarshal(yfile, &conf)
 	if err2 != nil {
-		log.Fatal(err2)
+		log.Println(err2)
 	}
 
 	// list big cpu namespaces in namespace slice
-	for k, v := range conf["bigCPUns"] {
-		fmt.Printf("%d -> %s\n", k, v)
-	}
+	// for k, v := range conf["bigCPUns"] {
+	// 	fmt.Printf("%d -> %s\n", k, v)
+	// }
 
 	return conf
 }
