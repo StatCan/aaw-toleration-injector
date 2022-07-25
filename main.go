@@ -36,7 +36,7 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 
 // read ns-conf.yaml and use in mutate.go to tolerate pods with special cases
 func UnmarshalConf() map[string][]string {
-	yfile, err := ioutil.ReadFile("app/ns-conf.yaml")
+	yfile, err := ioutil.ReadFile("./app/ns-conf.yaml")
 	if err != nil {
 		log.Println(err)
 	}
