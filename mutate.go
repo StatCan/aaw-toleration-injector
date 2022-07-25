@@ -107,10 +107,10 @@ func mutate(namespacesLister corev1listers.NamespaceLister, request v1beta1.Admi
 			}
 		} else if numCPU > 14 && numCPU <= 72 {
 			bigCpuNamespaces := namespaceConfig["bigCPUns"]
-			log.Printf("request.Namespace: %s | pod.Namespace: %s", request.Namespace, pod.Namespace)
+			log.Printf("request.Namespace: %s", request.Namespace)
 			for _, ns := range bigCpuNamespaces { // store namespaces in map[ns string] string for indexablility if needed
 				log.Printf("ns: %s", ns)
-				if pod.Namespace == ns {
+				if request.Namespace == ns {
 					tolerations = append(tolerations, v1.Toleration{
 						Key:      "node.statcan.gc.ca/use",
 						Value:    "cpu-72",
