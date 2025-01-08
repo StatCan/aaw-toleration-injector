@@ -1,7 +1,7 @@
 [(Français)](#injecteur-de-toleration-pour-ads-eaa)
 
-## DAaaS AAW Toleration Injector
-___
+# DAaaS AAW Toleration Injector
+
 ## Adding a node pool
 When adding a new node pool type, the toleration injector should be extended to include tolerations for the new node pool. Once the taints have been defined for the nodes, they can be injected as tolerations to the appropriate pods. To allow specific namespaces to tolerate to special node pools, a [config map](https://github.com/StatCan/aaw-kubeflow-profiles#profiles-requiring-scheduling-to-special-node-pools) was created to map the node types to allowed namespaces.
 ## Development Workflow
